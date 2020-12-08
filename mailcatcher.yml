@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  mailcatcher:
+    networks:
+      - mailcatcher
+      - traefik-public
+    image: sj26/mailcatcher
+    deploy:
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+
+        - traefik.http.middlewares.mailcatcher-auth.basicauth.users=${USERNAME?Variable not set}:${HASHED_PASSWORD?Variable not set}
+
+        - traefik.http.routers.mailcatcher.rule=Host(`${DOMAIN?ERR}`)
+        - traefik.http.routers.mailcatcher.entrypoints=https
+        - traefik.http.routers.mailcatcher.tls=true
+        - traefik.http.routers.mailcatcher.tls.certresolver=le
+        - traefik.http.routers.mailcatcher.middlewares=mailcatcher-auth
+
+        - traefik.http.services.mailcatcher.loadbalancer.server.port=1080
+
+networks:
+  traefik-public:
+    external: true
+  mailcatcher:
+    external: true
+    attachable: true
